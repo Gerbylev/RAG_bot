@@ -17,6 +17,7 @@ class GPTService:
         self.request_counter = 0
         self.total_input_token = 0
         self.total_output_token = 0
+        log.info("GPT service init")
 
     async def fetch_completion(self, prompt: str, args=None) -> str:
         # model_key - ключ модели (например, 'model_recalculate' или 'model_matching')

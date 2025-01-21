@@ -4,12 +4,6 @@ import tempfile
 from dataclasses import dataclass
 from sentence_transformers import SentenceTransformer
 import psycopg2
-from whoosh.analysis import StemmingAnalyzer
-from whoosh.filedb.filestore import FileStorage
-from whoosh.index import create_in, open_dir
-from whoosh.fields import Schema, TEXT, ID
-from whoosh.qparser import QueryParser, MultifieldParser, PhrasePlugin
-
 from config.Config import CONFIG
 from utils.logger import get_logger
 
@@ -34,14 +28,6 @@ class RAGService:
             "port": CONFIG.db.port
         }
         self.conn = psycopg2.connect(**DB_PARAMS)
-
-        self.index_path = "/tmp/rag_index"
-        schema = Schema(id=ID(stored=True, unique=True), text=TEXT(stored=True), link=ID(stored=True))
-        if not os.path.exists(self.index_path):
-            os.mkdir(self.index_path)
-            self.index = create_in(self.index_path, schema)
-        else:
-            self.index = open_dir(self.index_path)
         log.info("RAG init")
 
     def vector_search(self, query: str):
@@ -78,9 +64,6 @@ class RAGService:
             record_id = cur.fetchone()[0]
         self.conn.commit()
 
-        writer = self.index.writer()
-        writer.update_document(id=str(record_id), text=text, link=link)
-        writer.commit()
         log.info(f"Add to index text:\n{text}\nlink: {link}")
 
     def _get_embedding(self, text: str) -> list:

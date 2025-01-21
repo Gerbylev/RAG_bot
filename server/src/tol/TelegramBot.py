@@ -1,17 +1,64 @@
 import importlib
 import pkgutil
+from dataclasses import dataclass
 
-from tol.interface import BaseBot, BaseInitBotModule, BaseBotModule
+from services.context_var import request_id_var
+from tol.interface import BaseBot, BaseInitBotModule, BaseBotModule, BaseAction, BaseReaction
+
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, filters, Application, \
+    CallbackQueryHandler
+from twisted.internet.defer import passthru
+from config.Config import CONFIG
+from tol.reaction import TelegramReaction
+from utils.logger import get_logger
 
 
-class MyBot(BaseBot):
+
+
+log = get_logger("TelegramBot")
+
+request_id = 0
+
+class TelegramBot(BaseBot):
+
+    async def command_start(self, update: Update, context: CallbackContext):
+        chat_id = update.effective_chat.id
+        user_id = update.effective_user.id
+
+    async def handle_message(self, update: Update, context: CallbackContext):
+        global request_id
+
+        request_id += 1
+        request_id_var.set(request_id)
+        # chat_id = update.effective_chat.id
+        # user_id = update.effective_user.id
+        # user_message = update.message.text
+        log.info(f"Запрос от пользователя: {update.message.text}\nИз чата: {update.effective_chat.id}")
+        tg_reaction = TelegramReaction(update, context)
+        await self.all_modules[tg_reaction.request_context.state].callback(tg_reaction, update.message.text)
+        # await query_service.process(user_message, update, context)
+
+    async def handle_callback(self, update: Update, context: CallbackContext):
+        global request_id
+
+        request_id += 1
+        request_id_var.set(request_id)
+
+        query = update.callback_query
+        await query.answer()
 
     def start(self):
-        print("Bot started")
-        self.all_modules["/login"].callback("Что то")
-        self.all_modules["/auth"].callback("Что то тут")
-        self.all_modules["/outlog"].callback("Oleg")
-        self.all_modules["/auth"].callback("Привет ааААаааААА")
+        self.initialize_modules('./bot', 'bot')
+        application = Application.builder().token(CONFIG.bot_token).build()
+
+        # Handlers
+        application.add_handler(CommandHandler("start", self.command_start))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+        application.add_handler(CallbackQueryHandler(self.handle_callback))
+
+        log.info("Telegram bot started")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
     @staticmethod
@@ -20,33 +67,9 @@ class MyBot(BaseBot):
             full_module_name = f"{package_name}.{module_name}"
             importlib.import_module(full_module_name)
 
-class MyModule(BaseInitBotModule):
 
-
-
-    def __init__(self) -> BaseBotModule:
-        super().__init__()
-        self.module_id = "/auth"
-        self.callback = lambda x: print(x)
-        self.state("/login", self.login)
-        self.state("/outlog", lambda x: print(f"вышел из аккаунта {x}"))
-        self.regex(r"\bПривет\b", lambda x: print(f"Привет пользователь {x}!"))
-        self.regex(r"\bПривет\b", lambda x, y: Action(y).dd(x))
-
-
-    @staticmethod
-    def login(query):
-        print("oleg")
-
-class Action:
-
-    def __init__(self, res):
-        self.reg = res
-
-    def dd(self, query: str):
-        print(f"{self.reg} JK {query}")
-
-
-if __name__ == "__main__":
-    bot = MyBot()
-    bot.start()
+#
+#
+# if __name__ == "__main__":
+#     bot = MyBot()
+#     bot.start()

@@ -6,13 +6,13 @@ class MyModule(BaseInitBotModule):
 
     def __init__(self) -> BaseBotModule:
         super().__init__()
-        self.module_id = "/auth"
+        self.module_id = "/reg"
         self.action  = self.Action
-        self.callback = "ff"
-        self.state("/login", "dd")
+        self.callback = "dd"
+        self.state("/bb", "dd")
         # self.state("/outlog", "cc")
         # self.regex(r"\bПривет\b", lambda x: print(f"Привет пользователь {x}!"))
-        self.regex(r"\bПривет\b", "dd")
+        # self.regex(r"\bПривет\b", "dd")
 
     class Action(BaseAction):
 
@@ -26,5 +26,5 @@ class MyModule(BaseInitBotModule):
             print("ff")
 
         async def dd(self, query: str):
-            await self.reaction.answer("Привет как твои дела?")
+            await self.reaction.answer("как заругаться??")
             return
