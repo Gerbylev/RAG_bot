@@ -40,7 +40,7 @@ class BaseReaction(ABC):
         pass
 
     @abstractmethod
-    def state(self, state: str):
+    def state(self, state: str, json_info: str):
         pass
 
     @abstractmethod

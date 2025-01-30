@@ -6,3 +6,10 @@ CREATE TABLE IF NOT EXISTS texts (
     embedding VECTOR(1024),
     link TEXT
 );
+
+
+CREATE TABLE IF NOT EXISTS chat_state(
+    id bigint PRIMARY KEY,
+    state TEXT NOT NULL,
+    json_sate_info TEXT
+);

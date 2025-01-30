@@ -2,6 +2,7 @@ pyyaml
 openai
 Jinja2
 python-telegram-bot
-whoosh
+pgvector
 graypy
 elasticsearch
+databases
