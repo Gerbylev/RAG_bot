@@ -8,7 +8,6 @@ from tol.interface import BaseBot, BaseInitBotModule, BaseBotModule, BaseAction,
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, filters, Application, \
     CallbackQueryHandler
-from twisted.internet.defer import passthru
 from config.Config import CONFIG
 from tol.reaction import TelegramReaction
 from utils.logger import get_logger
@@ -35,8 +34,9 @@ class TelegramBot(BaseBot):
         # user_id = update.effective_user.id
         # user_message = update.message.text
         log.info(f"Запрос от пользователя: {update.message.text}\nИз чата: {update.effective_chat.id}")
-        tg_reaction = TelegramReaction(update, context)
-        await self.all_modules[tg_reaction.request_context.state].callback(tg_reaction, update.message.text)
+        request_context, state_context = await TelegramReaction.create(update, context)
+        tg_reaction = TelegramReaction(request_context, state_context)
+        await self.all_modules[tg_reaction.state_context.state].callback(tg_reaction, update.message.text)
         # await query_service.process(user_message, update, context)
 
     async def handle_callback(self, update: Update, context: CallbackContext):
@@ -58,6 +58,7 @@ class TelegramBot(BaseBot):
         application.add_handler(CallbackQueryHandler(self.handle_callback))
 
         log.info("Telegram bot started")
+        TelegramReaction.all_modules = self.all_modules
         application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
@@ -68,8 +69,8 @@ class TelegramBot(BaseBot):
             importlib.import_module(full_module_name)
 
 
-#
-#
+
+
 # if __name__ == "__main__":
 #     bot = MyBot()
 #     bot.start()

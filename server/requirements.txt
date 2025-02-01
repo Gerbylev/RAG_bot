@@ -6,3 +6,5 @@ pgvector
 graypy
 elasticsearch
 databases
+markdownify
+asyncpg

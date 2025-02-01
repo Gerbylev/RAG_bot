@@ -2,7 +2,7 @@ import importlib
 import pkgutil
 import re
 from abc import ABC, abstractmethod
-from typing import Type, Any, Callable, List
+from typing import Type, Any, Callable, List, Optional
 
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -40,11 +40,11 @@ class BaseReaction(ABC):
         pass
 
     @abstractmethod
-    def state(self, state: str, json_info: str):
+    def state(self, state: str, json_info: Optional[str] = None):
         pass
 
     @abstractmethod
-    def go(self):
+    def go(self, state: str, json_info: Optional[str] = None):
         """Switches to a specific state or class."""
         pass
 

@@ -4,12 +4,12 @@ from tol.interface import BaseInitBotModule, BaseBotModule, BaseAction, BaseReac
 class MyModule(BaseInitBotModule):
 
 
-    def __init__(self) -> BaseBotModule:
+    def __init__(self):
         super().__init__()
-        self.module_id = "/auth"
+        self.module_id = "/login"
         self.action  = self.Action
-        self.callback = "ff"
-        self.state("/login", "dd")
+        self.callback = "dd"
+        self.state("/login_repeat", "ff")
         # self.state("/outlog", "cc")
         # self.regex(r"\bПривет\b", lambda x: print(f"Привет пользователь {x}!"))
         self.regex(r"\bПривет\b", "dd")
@@ -22,9 +22,10 @@ class MyModule(BaseInitBotModule):
         def default(self, query: str):
             print("default")
 
-        def ff(self, query: str):
-            print("ff")
+        async def ff(self, query: str):
+            await self.reaction.answer("Зарегайся дэбик")
 
         async def dd(self, query: str):
             await self.reaction.answer("Привет как твои дела?")
+            await self.reaction.go("/login_repeat")
             return

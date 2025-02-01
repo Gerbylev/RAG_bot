@@ -4,9 +4,9 @@ from tol.interface import BaseInitBotModule, BaseBotModule, BaseAction, BaseReac
 class MyModule(BaseInitBotModule):
 
 
-    def __init__(self) -> BaseBotModule:
+    def __init__(self):
         super().__init__()
-        self.module_id = "/reg"
+        self.module_id = "/registry"
         self.action  = self.Action
         self.callback = "dd"
         self.state("/bb", "dd")
@@ -26,5 +26,6 @@ class MyModule(BaseInitBotModule):
             print("ff")
 
         async def dd(self, query: str):
-            await self.reaction.answer("как заругаться??")
+            await self.reaction.answer("как заругаться??", ["Приветб как дела?", "Я твой рот наоборот"])
+            await self.reaction.state("/login")
             return

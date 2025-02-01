@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS texts (
 CREATE TABLE IF NOT EXISTS chat_state(
     id bigint PRIMARY KEY,
     state TEXT NOT NULL,
-    json_sate_info TEXT
+    json_state_info TEXT
 );
