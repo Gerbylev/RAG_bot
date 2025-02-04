@@ -7,9 +7,27 @@ CREATE TABLE IF NOT EXISTS texts (
     link TEXT
 );
 
-
-CREATE TABLE IF NOT EXISTS chat_state(
+CREATE TABLE IF NOT EXISTS chats_state(
     id bigint PRIMARY KEY,
     state TEXT NOT NULL,
+    previous_state TEXT NOT NULL,
     json_state_info TEXT
+);
+
+CREATE TABLE IF NOT EXISTS student(
+    id bigint PRIMARY KEY,
+    name TEXT NOT NULL,
+    surname TEXT NOT NULL,
+    patronymic TEXT NOT NULL,
+    group_number INT NOT NULL,
+    department INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS teacher(
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    surname TEXT NOT NULL,
+    patronymic TEXT NOT NULL,
+    secret_key TEXT NOT NULL,
+    department INT NOT NULL
 );

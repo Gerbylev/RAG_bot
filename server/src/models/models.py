@@ -14,8 +14,9 @@ class Texts(Base):
 
 
 class ChatState(Base):
-    __tablename__ = 'chat_state'
+    __tablename__ = 'chats_state'
 
     id = Column(BigInteger, primary_key=True)
     state = Column(Text, nullable=False)
     json_state_info = Column(Text)
+    previous_state = Column(Text, nullable=False)

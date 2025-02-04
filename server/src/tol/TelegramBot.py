@@ -53,7 +53,7 @@ class TelegramBot(BaseBot):
         application = Application.builder().token(CONFIG.bot_token).build()
 
         # Handlers
-        application.add_handler(CommandHandler("start", self.command_start))
+        application.add_handler(CommandHandler("start", self.handle_message))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
         application.add_handler(CallbackQueryHandler(self.handle_callback))
 

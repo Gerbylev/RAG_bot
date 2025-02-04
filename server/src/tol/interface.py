@@ -35,19 +35,28 @@ class BaseReaction(ABC):
         go(): Switches to a specific state or class.
     """
 
+    def __init__(self):
+        self.state_context = None
+
     @abstractmethod
     def answer(self, answer: str, button: List[Any] = None):
         pass
 
     @abstractmethod
-    def state(self, state: str, json_info: Optional[str] = None):
+    def state(self, state: str, json_info: Optional[str] = None, change_previous_state=True):
         pass
 
     @abstractmethod
-    def go(self, state: str, json_info: Optional[str] = None):
-        """Switches to a specific state or class."""
+    def change_json_info(self, json_info: Optional[str] = None):
         pass
 
+    @abstractmethod
+    def go(self, state: str, json_info: Optional[str] = None, change_previous_state=True):
+        """Switches to a specific state or class."""
+        pass
+    @abstractmethod
+    def get_json_state(self):
+        pass
 
 class BaseAction(ABC):
     """
@@ -74,10 +83,11 @@ class BaseBotModule(ABC):
         callback(req: BaseReaction, query: str): Processes the query by executing appropriate actions.
     """
 
-    def __init__(self, module_id: str, default_function: Callable, actions: List[Callable[[BaseAction, str], bool]] = None):
+    def __init__(self, module_id: str, default_function: Callable, actions: List[Callable[[BaseAction, str], bool]] = None, parent = None):
         self.module_id = module_id
         self.actions = actions or []
         self.default_function = default_function
+        self.parent = parent
 
     async def callback(self, req: BaseReaction, query: str):
         """
@@ -86,6 +96,10 @@ class BaseBotModule(ABC):
         for action in self.actions:
             if await action(req, query):
                 return
+        if self.parent is not None:
+            for action in self.parent.actions:
+                if await action(req, query):
+                    return
         await self.default_function(req, query)
 
 
@@ -145,6 +159,8 @@ class BaseInitBotModule(ABC):
         async def wrapper(react: BaseReaction, query: str):
             await getattr(self.action(react), self.callback)(query)
         self.main_module = BaseBotModule(self.module_id, wrapper, self.actions)
+        for module in self.bot_modules:
+            module.parent = self.main_module
 
     def state(self, state: str, action_method: str):
         """
