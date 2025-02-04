@@ -2,8 +2,8 @@ from bot.template import t
 from tol.interface import BaseInitBotModule, BaseBotModule, BaseAction, BaseReaction
 
 
-class MyModule(BaseInitBotModule):
-
+class LoginModule(BaseInitBotModule):
+    # Мб не нужен пока что
 
     def __init__(self):
         super().__init__()

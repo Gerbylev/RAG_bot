@@ -7,7 +7,7 @@ from tol.Validator import Validator
 from tol.interface import BaseInitBotModule, BaseAction, BaseReaction
 
 
-class MyModule(BaseInitBotModule):
+class FormModule(BaseInitBotModule):
 
     def __init__(self):
         super().__init__()

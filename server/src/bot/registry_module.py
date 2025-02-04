@@ -4,7 +4,7 @@ from bot.template import t
 from tol.interface import BaseInitBotModule, BaseBotModule, BaseAction, BaseReaction
 
 
-class MyModule(BaseInitBotModule):
+class RegistryModule(BaseInitBotModule):
 
 
     def __init__(self):

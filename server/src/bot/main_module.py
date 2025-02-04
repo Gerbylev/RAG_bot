@@ -2,7 +2,7 @@ from bot.template import t
 from tol.interface import BaseInitBotModule, BaseAction, BaseReaction
 
 
-class MyModule(BaseInitBotModule):
+class MainModule(BaseInitBotModule):
 
 
     def __init__(self):
