@@ -9,6 +9,10 @@ class t:
     leave_form = "Уйти с формы ✖️"
     skip = "Пропустить ➡️"
     question_deanery = "Вопрос деканату 📣"
-    question_department = "Вопрос деканату 🏫"
-
-
+    question_department = "Вопрос кафедре 🏫"
+    account = "Аккаунт 👤"
+    science = "Наука 🔬"
+    championships = "Чемпионаты и практики 🏆"
+    schedules =  "Расписание отделов ⌛️"
+    diplomas = "Дипломы и диссертации 📚"
+    scholarships = "Стипендии и гранты 💸"

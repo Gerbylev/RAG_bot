@@ -1,11 +1,12 @@
 import json
 
+from telegram import Message
+
 from bot.template import t
 from tol.interface import BaseInitBotModule, BaseBotModule, BaseAction, BaseReaction
 
 
 class RegistryModule(BaseInitBotModule):
-
 
     def __init__(self):
         super().__init__()
@@ -21,10 +22,11 @@ class RegistryModule(BaseInitBotModule):
         def __init__(self, req: BaseReaction):
             super().__init__(req)
 
-        async def teacher_login(self, query: str):
+        async def teacher_login(self, query: Message):
+            await self.reaction.answer("Введите свой токен или QR-code", [[t.return_back]])
             await self.reaction.go("/login/teacher")
 
-        async def student_login(self, query: str):
+        async def student_login(self, query: Message):
             login_form = [
                 {"label": "Имя", "value": None, "is_optional": False, "is_passed": False, "validator": "check_length(2, 100)" },
                 {"label": "Фамилия", "value": None, "is_optional": False, "is_passed": False, "validator": "check_length(2, 100)"},
@@ -35,11 +37,11 @@ class RegistryModule(BaseInitBotModule):
 
             await self.reaction.go("/form", json.dumps(login_form, ensure_ascii=False)) # Ввести json
 
-        async def save_login_form(self, query):
-            form = await self.reaction.get_json_state()
+        async def save_login_form(self, query: Message):
+            form = json.loads(self.reaction.state_context.json_state)
             # Логика сохранения
             await self.reaction.go('/main')
 
-        async def registry(self, query: str):
+        async def registry(self, query: Message):
             message = """Вам необходимо пройти регистрацию, укажите кем вы являетесь"""
             await self.reaction.answer(message, [[t.student, t.teacher]])

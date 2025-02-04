@@ -8,3 +8,6 @@ elasticsearch
 databases
 markdownify
 asyncpg
+pillow
+pyzbar
+zbar

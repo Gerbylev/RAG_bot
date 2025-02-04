@@ -6,21 +6,12 @@ from typing import List, Any, Optional
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import CallbackContext
 
-from tol.interface import BaseReaction
+from tol.interface import BaseReaction, RequestContext, StateContext
 from dao.state_dao import ChatStateDAO
 from models.models import ChatState
 
 
-@dataclass
-class RequestContext:
-    update: Update
-    context: CallbackContext
 
-@dataclass
-class StateContext:
-    state: str
-    json_state: Optional[str]
-    previous_state: Optional[str]
 
 class TelegramReaction(BaseReaction):
 
@@ -28,8 +19,8 @@ class TelegramReaction(BaseReaction):
 
     def __init__(self, request_context: RequestContext, state_context: StateContext):
         super().__init__()
-        self.request_context = request_context
-        self.state_context = state_context
+        self.request_context: RequestContext = request_context
+        self.state_context: StateContext = state_context
 
     @classmethod
     async def create(cls, update: Update, context: CallbackContext):
@@ -55,11 +46,9 @@ class TelegramReaction(BaseReaction):
         chat_id = self.request_context.update.effective_chat.id
         existing_state = await ChatStateDAO.find_one_or_none_by_id(chat_id)
 
-        if existing_state:
-            await ChatStateDAO.update({"id": chat_id}, state=existing_state.state, json_state_info=json_info,
-                                      previous_state=existing_state.previous_state)
-        else:
-            await ChatStateDAO.add(id=chat_id, state=existing_state.state, json_state_info=json_info, previous_state=existing_state.state)
+        await ChatStateDAO.update({"id": chat_id}, state=existing_state.state, json_state_info=json_info,
+                                  previous_state=existing_state.previous_state)
+
 
     async def state(self, state: str, json_info: Optional[str] = None, change_previous_state=True):
         """Сохраняет новое состояние в базе данных."""
@@ -79,22 +68,17 @@ class TelegramReaction(BaseReaction):
         chat_id = self.request_context.update.effective_chat.id
         existing_state = await ChatStateDAO.find_one_or_none_by_id(chat_id)
 
-        if existing_state:
-            if change_previous_state:
-                await ChatStateDAO.update({"id": chat_id}, state=state, json_state_info=json_info,
-                                     previous_state=existing_state.state)
-            else:
-                await ChatStateDAO.update({"id": chat_id}, state=state, json_state_info=json_info,
-                                     previous_state=existing_state.previous_state)
+        if change_previous_state:
+            await ChatStateDAO.update({"id": chat_id}, state=state, json_state_info=json_info,
+                                 previous_state=existing_state.state)
         else:
-            await ChatStateDAO.add(id=chat_id, state=state, json_state_info=json_info, previous_state=state)
+            await ChatStateDAO.update({"id": chat_id}, state=state, json_state_info=json_info,
+                                 previous_state=existing_state.previous_state)
+
         self.state_context.json_state=json_info
         self.state_context.state=state
         self.state_context.previous_state=existing_state.previous_state
-        await TelegramReaction.all_modules[state].callback(self, self.request_context.update.message.text)
-
-    async def get_json_state(self):
-        return json.loads(self.state_context.json_state)
+        await TelegramReaction.all_modules[state].callback(self, self.request_context.update.message)
 
     @staticmethod
     async def __get_state(request_context: RequestContext):

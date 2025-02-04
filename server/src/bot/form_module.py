@@ -1,6 +1,8 @@
 import json
 from wsgiref.validate import validator
 
+from telegram import Message
+
 from bot.template import t
 from dao.state_dao import ChatStateDAO
 from tol.Validator import Validator
@@ -24,34 +26,36 @@ class FormModule(BaseInitBotModule):
         def __init__(self, req: BaseReaction):
             super().__init__(req)
 
-        async def edit(self, query: str):
-            form = await self.reaction.get_json_state()
-            if query == t.save_form:
+        async def edit(self, query: Message):
+            text_message = query.text
+            form = json.loads(self.reaction.state_context.json_state)
+            if text_message == t.save_form:
                 # await self.reaction.answer(
                 #     f"Форма успешно сохранена!")
                 await self.reaction.go(f"{self.reaction.state_context.previous_state}/form", json.dumps(form))
                 return
-            validator = Validator(query)
+            validator = Validator(text_message)
             if not validator.check_number_range(0, len(form) - 1):
                 await self.reaction.answer(validator.error_message)
                 return
             await self.reaction.answer(
-                f"Введите {form[int(query)]['label']}{'*' if form[int(query)]['is_optional'] else ''}",
-                [[t.leave_form], [t.skip]] if form[int(query)]['is_optional'] else [[t.leave_form]])
-            form[int(query)]['is_passed'] = False
-            form[int(query)]['value'] = None
+                f"Введите {form[int(text_message)]['label']}{'*' if form[int(text_message)]['is_optional'] else ''}",
+                [[t.leave_form], [t.skip]] if form[int(text_message)]['is_optional'] else [[t.leave_form]])
+            form[int(text_message)]['is_passed'] = False
+            form[int(text_message)]['value'] = None
             await self.reaction.state('/form/process', json.dumps(form, ensure_ascii=False), False)
 
-        async def process(self, query: str):
-            form = await self.reaction.get_json_state()
+        async def process(self, query: Message):
+            text_message = query.text
+            form = json.loads(self.reaction.state_context.json_state)
             for index, field in enumerate(form):
                 if not field['is_passed']:
-                    validator = Validator(query)
+                    validator = Validator(text_message)
                     if not validator.execute_validation(field['validator']):
                         await self.reaction.answer(f"{field['label']} {validator.error_message}")
                         return
 
-                    field['value'] = None if field['is_optional'] and query == t.skip else query
+                    field['value'] = None if field['is_optional'] and text_message == t.skip else text_message
                     field['is_passed'] = True
                     await self.reaction.change_json_info(json.dumps(form, ensure_ascii=False))
                     break
@@ -74,8 +78,8 @@ class FormModule(BaseInitBotModule):
                                                [[t.leave_form], [t.skip]] if field['is_optional'] else [[t.leave_form]])
                     return
 
-        async def start_form(self, query: str):
-            form = await self.reaction.get_json_state()
+        async def start_form(self, query: Message):
+            form = json.loads(self.reaction.state_context.json_state)
 
             def print_form():
                 return '\n'.join(

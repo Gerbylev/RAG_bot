@@ -36,7 +36,7 @@ class TelegramBot(BaseBot):
         log.info(f"Запрос от пользователя: {update.message.text}\nИз чата: {update.effective_chat.id}")
         request_context, state_context = await TelegramReaction.create(update, context)
         tg_reaction = TelegramReaction(request_context, state_context)
-        await self.all_modules[tg_reaction.state_context.state].callback(tg_reaction, update.message.text)
+        await self.all_modules[tg_reaction.state_context.state].callback(tg_reaction, update.message)
         # await query_service.process(user_message, update, context)
 
     async def handle_callback(self, update: Update, context: CallbackContext):
@@ -54,7 +54,7 @@ class TelegramBot(BaseBot):
 
         # Handlers
         application.add_handler(CommandHandler("start", self.handle_message))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+        application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO & ~filters.COMMAND, self.handle_message))
         application.add_handler(CallbackQueryHandler(self.handle_callback))
 
         log.info("Telegram bot started")
@@ -71,6 +71,3 @@ class TelegramBot(BaseBot):
 
 
 
-# if __name__ == "__main__":
-#     bot = MyBot()
-#     bot.start()

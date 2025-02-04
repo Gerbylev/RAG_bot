@@ -2,11 +2,23 @@ import importlib
 import pkgutil
 import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Type, Any, Callable, List, Optional
 
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import CallbackContext
 
+
+@dataclass
+class RequestContext:
+    update: Update
+    context: CallbackContext
+
+@dataclass
+class StateContext:
+    state: str
+    json_state: Optional[str]
+    previous_state: Optional[str]
 
 class BaseBot(ABC):
     """
@@ -36,7 +48,9 @@ class BaseReaction(ABC):
     """
 
     def __init__(self):
-        self.state_context = None
+        self.state_context: Optional[StateContext] = None
+        self.request_context: Optional[RequestContext] = None
+
 
     @abstractmethod
     def answer(self, answer: str, button: List[Any] = None):
@@ -53,9 +67,6 @@ class BaseReaction(ABC):
     @abstractmethod
     def go(self, state: str, json_info: Optional[str] = None, change_previous_state=True):
         """Switches to a specific state or class."""
-        pass
-    @abstractmethod
-    def get_json_state(self):
         pass
 
 class BaseAction(ABC):
@@ -168,7 +179,7 @@ class BaseInitBotModule(ABC):
         """
         self._check_if_method_exist(action_method)
 
-        async def wrapper(react: BaseReaction, query: str):
+        async def wrapper(react: BaseReaction, query: Message):
             await getattr(self.action(react), action_method)(query)
 
         self.bot_modules.append(BaseBotModule(state, wrapper))
@@ -179,8 +190,8 @@ class BaseInitBotModule(ABC):
         """
         self._check_if_method_exist(action_method)
 
-        async def wrapper(react: BaseReaction, query: str):
-            if re.match(pattern, query):
+        async def wrapper(react: BaseReaction, query: Message):
+            if query.text and re.match(pattern, query.text):
                 await getattr(self.action(react), action_method)(query)
                 return True
             return False
