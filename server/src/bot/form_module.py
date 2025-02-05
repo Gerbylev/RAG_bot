@@ -30,8 +30,6 @@ class FormModule(BaseInitBotModule):
             text_message = query.text
             form = json.loads(self.reaction.state_context.json_state)
             if text_message == t.save_form:
-                # await self.reaction.answer(
-                #     f"Форма успешно сохранена!")
                 await self.reaction.go(f"{self.reaction.state_context.previous_state}/form", json.dumps(form))
                 return
             validator = Validator(text_message)

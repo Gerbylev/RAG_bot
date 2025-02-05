@@ -10,7 +10,6 @@ from pyzxing import BarCodeReader
 # TODO: Убрать CV2 поставил временно так как, не имею возможность сейчас починить систему (не ставятся либы через apt install)
 
 class LoginModule(BaseInitBotModule):
-    # Мб не нужен пока что
 
     def __init__(self):
         super().__init__()
@@ -30,7 +29,7 @@ class LoginModule(BaseInitBotModule):
                 await self.reaction.answer("Не правильный формат сообщения")
                 return
             token = await self.get_qr(query)
-            # Проверка в db
+            # TODO Проверка в db
             print(token)
 
         async def get_qr(self, query: Message):
