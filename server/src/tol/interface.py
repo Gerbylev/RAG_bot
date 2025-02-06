@@ -9,16 +9,21 @@ from telegram import Update, Message
 from telegram.ext import CallbackContext
 
 
+# TODO переписать всё ***, как тебе блять в голову пришло создать action,
+#  всё должно быть state, просто разные функции входа в них, некоторые по regex привязаны чётко к некоторым окнам, другие просто глобальные
+
 @dataclass
 class RequestContext:
     update: Update
     context: CallbackContext
+
 
 @dataclass
 class StateContext:
     state: str
     json_state: Optional[str]
     previous_state: Optional[str]
+
 
 class BaseBot(ABC):
     """
@@ -51,7 +56,6 @@ class BaseReaction(ABC):
         self.state_context: Optional[StateContext] = None
         self.request_context: Optional[RequestContext] = None
 
-
     @abstractmethod
     def answer(self, answer: str, button: List[Any] = None):
         pass
@@ -68,6 +72,7 @@ class BaseReaction(ABC):
     def go(self, state: str, json_info: Optional[str] = None, change_previous_state=True):
         """Switches to a specific state or class."""
         pass
+
 
 class BaseAction(ABC):
     """
@@ -94,24 +99,28 @@ class BaseBotModule(ABC):
         callback(req: BaseReaction, query: str): Processes the query by executing appropriate actions.
     """
 
-    def __init__(self, module_id: str, default_function: Callable, actions: List[Callable[[BaseAction, str], bool]] = None, parent = None):
+    def __init__(self, module_id: str, default_function: Callable,
+                 actions: List[Callable[[BaseAction, str], bool]] = None, parent=None):
         self.module_id = module_id
         self.actions = actions or []
         self.default_function = default_function
         self.parent = parent
 
-    async def callback(self, req: BaseReaction, query: str):
+    async def callback(self, req: BaseReaction, query: str, force=False):
         """
         Processes the query by checking all actions. If none match, calls the default function.
         """
-        for action in self.actions:
-            if await action(req, query):
-                return
-        if self.parent is not None:
-            for action in self.parent.actions:
+        if force:
+            await self.default_function(req, query)
+        else:
+            for action in self.actions:
                 if await action(req, query):
                     return
-        await self.default_function(req, query)
+            if self.parent is not None:
+                for action in self.parent.actions:
+                    if await action(req, query):
+                        return
+            await self.default_function(req, query)
 
 
 class BaseInitBotModule(ABC):
@@ -167,8 +176,10 @@ class BaseInitBotModule(ABC):
         if self.callback is None:
             raise RuntimeError("callback is not initialized.")
         self._check_if_method_exist(self.callback)
+
         async def wrapper(react: BaseReaction, query: str):
             await getattr(self.action(react), self.callback)(query)
+
         self.main_module = BaseBotModule(self.module_id, wrapper, self.actions)
         for module in self.bot_modules:
             module.parent = self.main_module

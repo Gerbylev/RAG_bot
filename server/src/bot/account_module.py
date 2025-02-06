@@ -22,7 +22,7 @@ class AccountModule(BaseInitBotModule):
 
         async def account(self, query: Message):
             # TODO get account info
-            await self.reaction.answer("Oleg Gerbylev группа 4318 кафедра 44\nОтредактировать информацию", [[t.edit_account],[t.return_back, t.leave_form]])
+            await self.reaction.answer("Oleg Gerbylev группа 4318 кафедра 44\nОтредактировать информацию", [[t.edit_account],[t.return_back, t.logout]])
 
 
         async def edit(self, query: Message):

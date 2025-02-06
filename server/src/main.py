@@ -16,4 +16,5 @@ def main() -> None:
 if __name__ == "__main__":
     REGISTRY.put(GPTService())
     REGISTRY.put(RAGService())
+    REGISTRY.put(QueryService())
     main()

@@ -78,7 +78,7 @@ class TelegramReaction(BaseReaction):
         self.state_context.json_state=json_info
         self.state_context.state=state
         self.state_context.previous_state=existing_state.previous_state
-        await TelegramReaction.all_modules[state].callback(self, self.request_context.update.message)
+        await TelegramReaction.all_modules[state].callback(self, self.request_context.update.message, True)
 
     @staticmethod
     async def __get_state(request_context: RequestContext):

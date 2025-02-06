@@ -10,6 +10,7 @@ from services.RAGService import RAGService, RAGInfo
 from services.registry import REGISTRY
 import yaml
 import re
+from duckduckgo_api_haystack import DuckduckgoApiWebSearch
 
 from utils.logger import get_logger
 
@@ -27,6 +28,7 @@ class QueryService:
     def __init__(self):
         self.gpt_service: GPTService = REGISTRY.get(GPTService)
         self.rag_service: RAGService = REGISTRY.get(RAGService)
+        self.websearch = DuckduckgoApiWebSearch(top_k=5)
 
     def extract_action(self, output):
         match = re.search(r"Действие:\s*(\w+)\((.*?)\)", output)
@@ -41,47 +43,16 @@ class QueryService:
     def web_search(self, query: str):
         try:
             query = query if "гуап" in query.lower() else "ГУАП " + query
-            search_url = "https://www.google.com/search"
-            params = {
-                "q": query
-            }
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-            }
-            response = requests.get(search_url, params=params, headers=headers)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, "html.parser")
+            results = self.websearch.run(query=query)
 
-            search_div = soup.find("div", id="search")
+            documents = results["documents"]
+            links = results["links"]
 
-            first_link_tags = search_div.find_all("a")
-            for first_link_tag in first_link_tags:
-                if not first_link_tag:
-                    continue
+            res =[]
+            for doc, link in zip(documents, links):
+                res.append(RAGInfo(id =100, text=str(doc.content), link=str(link), rank=1))
 
-                first_link: str = first_link_tag.get("href", "")
-
-                if not first_link:
-                    continue
-
-                if not first_link.startswith('http'):
-                    continue
-                page_response = requests.get(first_link, headers=headers)
-                page_response.raise_for_status()
-                content_type = page_response.headers.get('Content-Type', '')
-                if 'text/html' in content_type:
-                    page_response.encoding = 'utf-8'
-
-                    soup = BeautifulSoup(page_response.text, 'html.parser')
-                    for img in soup.find_all('img'):
-                        img.decompose()  # Удаляет тег изображения из дерева DOM
-
-                    # Преобразование оставшегося HTML в Markdown
-                    markdown_content = markdownify(str(soup)).strip()
-
-                    markdown_content = re.sub(r"\n{3,}", "\n\n", markdown_content)
-
-                    return RAGInfo(id =100, text=markdown_content, link=first_link, rank=1)
+            return res
         except Exception as e:
             log.error(f"Query: {query}, web_search dosent work", exc_info=e)
             return RAGInfo(id =100, text=f"Ошибка: {e}", link='', rank=1)
@@ -98,8 +69,9 @@ class QueryService:
                 history.append({'role': 'system', 'content': trace})
             elif action_name == "web_search":
                 observation = self.web_search(action_input[1:-1])
-                info.append(observation)
-                trace += f"Observation: Информация:\n{len(info)}. {observation.text}\n"
+                inf = '\n'.join([f"{len(info)+index}. {rag.text}" for index, rag in enumerate(observation)])
+                info.extend(observation)
+                trace += f"Observation: {inf}"
                 history.append({'role': 'system', 'content': trace})
             elif action_name == "final_answer":
                 answer = action_input[1:-1]
@@ -136,11 +108,11 @@ class QueryService:
         return "Ответ не удалось получить за указанное число итераций.", []
 
     async def process(self, message: str, update: Update, context: CallbackContext):
-        info = self.rag_service.find(message)
+        info = self.rag_service.vector_search(message)
         log.info(f"Find info: {info}")
-        current_prompt = agent_prompt.render(user_question=message, data=info[0])
+        current_prompt = agent_prompt.render(user_question=message, data=info)
         log.info(f"Agent prompt: {current_prompt}")
-        response = await self.action([{'role': 'user', 'content': current_prompt}], info[0])
+        response = await self.action([{'role': 'user', 'content': current_prompt}], info)
         log.info(f"Agent response text:\n{response[0]}\nhelpful info: {response[1]}")
         buttons = []
         for index, rag_info in enumerate(response[1][:5]):
@@ -154,3 +126,4 @@ class QueryService:
 
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text=response[0], reply_markup=InlineKeyboardMarkup(keyboard))
+
